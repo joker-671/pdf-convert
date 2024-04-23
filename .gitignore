@@ -1,0 +1,9 @@
+venv
+public/web/node_modules
+public/web/dist
+public/web/src/.umi
+public/web/src/.umi-production
+public/*.pdf
+public/*.docx
+public/*.xlsx
+public/assets
