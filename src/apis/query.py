@@ -1,3 +1,4 @@
+from enum import Enum
 import json
 import os
 from pathlib import Path
@@ -13,19 +14,19 @@ router = APIRouter()
 root_assets = os.path.join(os.getcwd(), "public\\assets")
 
 
-class DataItem(TypedDict):
+class FilesQueryData(BaseModel):
     url: str
     filename: str
 
 
-class FilesQuery(BaseModel):
-    data: List[DataItem]
-    code: Optional[int]
-    message: Optional[str]
+class FilesQueryResponse(BaseModel):
+    data: FilesQueryData
+    message: str
+    code: int
 
 
-@router.get("/apis/files/query")
-async def filesQuery():
+@router.get("/apis/files/query", response_model=FilesQueryResponse)
+async def files_query():
     path = os.path.join(root_assets, "cache.json")
     if not os.path.exists(path):
         return JSONResponse(content={"data": [], "code": 0, "message": "success"})
@@ -38,17 +39,24 @@ async def filesQuery():
 
     return JSONResponse(content={"data": arr, "code": 0, "message": "success"})
 
+class TransitionType(Enum):
+    WOED='word'
+    EXCEL='excel'
+
+class TransitionRequest(BaseModel):
+    fileUrl: str
+    type: TransitionType
 
 class TransitionResponse(BaseModel):
-    fileUrl: str
-    type: str
+    data: str
+    message: str
+    code: int
 
 
 @router.post("/apis/pdf/transition", response_model=TransitionResponse)
-async def pdf_transition(params: Request):
-    data = await params.json()
-    fileUrl = data.get("fileUrl")
-    type = data.get("type")
+async def transition(params: TransitionRequest):
+    fileUrl = params.fileUrl
+    type = params.type
     if not type:
         return JSONResponse(content={"message": 'The "typs" is missing!'})
     file_path = os.path.join(
@@ -59,7 +67,7 @@ async def pdf_transition(params: Request):
         result = run_func(file_path)
         file_url = result.replace(os.path.join(root_assets, "files"), "")
         return JSONResponse(content={"data": file_url, "message": "failed", "code": 1})
-    return JSONResponse(content={"data": False, "message": "failed", "code": 1})
+    return JSONResponse(content={"data": None, "message": "failed", "code": 1})
 
 
 def to_word(path: str):
@@ -101,8 +109,10 @@ def to_excel(path: str):
     df.to_excel(output_path, index=False)
     return output_path
 
+class DeleteFileResponse(BaseModel):
+    message:str
 
-@router.delete("/apis/delete_file/{file_hash}/{file_name}")
+@router.delete("/apis/files/delete/{file_hash}/{file_name}",response_model=DeleteFileResponse)
 async def delete_file(file_hash: str, file_name: str):
     file_path = os.path.join(root_assets, "files", file_hash, file_name)
 

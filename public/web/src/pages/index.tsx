@@ -32,7 +32,7 @@ export default function HomePage() {
   const download = (path: string) => `/apis/download${path}`
 
   const onDelete = async (path: string) => {
-    const res = await axios.delete('\\apis\\delete_file' + path).then(res=>res.data)
+    const res = await axios.delete('/apis/files/delete' + path).then(res=>res.data)
     fetchList()
   }
   return (
